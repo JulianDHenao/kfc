@@ -89,9 +89,9 @@
                                 <span class="text-4xl font-extrabold text-red-700">${{ number_format($total, 2) }}</span>
                             </div>
                             
-                            <a href="#" class="mt-4 md:mt-0 md:ml-6 bg-green-600 text-white px-8 py-3 rounded-xl font-semibold hover:bg-green-700 transition shadow-lg">
-                                Proceder a Pagar
-                            </a>
+                            <a href="{{ route('checkout.show') }}" class="mt-4 md:mt-0 md:ml-6 bg-green-600 text-white px-8 py-3 rounded-xl font-semibold hover:bg-green-700 transition shadow-lg">
+    Proceder a Pagar
+</a>
                         </div>
                     </div>
                 </div>
