@@ -13,62 +13,73 @@
                 <!-- Navigation Links -->
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                     <x-nav-link :href="route('storefront')" :active="request()->routeIs('storefront')">
-                        {{ __('Menú Principal') }}
+                        {{ __('Menu Principal') }}
                     </x-nav-link>
-                    
-                    <x-nav-link :href="route('cart.index')" :active="request()->routeIs('cart.index')">
-                        {{ __('Carrito') }}
+                    <x-nav-link :href="route('restaurants.index')" :active="request()->routeIs('restaurants.index')">
+                        {{ __('Restaurantes') }}
+                    </x-nav-link>
+                    @auth
+                       <x-nav-link :href="route('menu.index')" :active="request()->routeIs('menu.index')">
+                           {{ __('Gestionar Menú') }}
+                       </x-nav-link>
+                    @endauth
+                    <x-nav-link :href="route('cart.index')" :active="request()->routeIs('cart.index')" class="flex items-center">
+                        {{-- Ícono de Carrito --}}
+                        <svg class="w-5 h-5 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c.51 0 .962-.343 1.087-.835l1.823-6.841M21 3.75h-1.875a.375.375 0 0 0-.375.375v.75c0 .207.168.375.375.375h1.5a.375.375 0 0 0 .375-.375v-.75a.375.375 0 0 0-.375-.375Zm-4.5 0h-1.875a.375.375 0 0 0-.375.375v.75c0 .207.168.375.375.375h1.5a.375.375 0 0 0 .375-.375v-.75a.375.375 0 0 0-.375-.375Z" />
+                        </svg>
+                        <span>{{ __('Carrito') }}</span>
+                        {{-- Contador --}}
+                        <span id="cart-count" class="ml-2 bg-red-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                            {{ array_sum(array_column(session('cart', []), 'quantity')) }}
+                        </span>
                     </x-nav-link>
                 </div>
             </div>
 
-            <!-- Settings Dropdown (Menú de Escritorio) -->
+            <!-- Settings Dropdown -->
             <div class="hidden sm:flex sm:items-center sm:ms-6">
                 @auth
-                    <!-- Si el usuario está autenticado, muestra el dropdown de perfil -->
-                    <x-dropdown align="right" width="48">
-                        <x-slot name="trigger">
-                            <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition ease-in-out duration-150">
-                                <div>{{ Auth::user()->name }}</div>
-                                
-                                <div class="ms-1">
-                                    <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                    </svg>
-                                </div>
-                            </button>
-                        </x-slot>
+                <x-dropdown align="right" width="48">
+                    <x-slot name="trigger">
+                        <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition ease-in-out duration-150">
+                            <div>{{ Auth::user()->name }}</div>
 
-                        <x-slot name="content">
-                            <x-dropdown-link :href="route('dashboard')">
-                                {{ __('Dashboard') }}
+                            <div class="ms-1">
+                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                        </button>
+                    </x-slot>
+
+                    <x-slot name="content">
+                        <x-dropdown-link :href="route('profile.edit')">
+                            {{ __('Profile') }}
+                        </x-dropdown-link>
+
+                        <!-- Authentication -->
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+
+                            <x-dropdown-link :href="route('logout')"
+                                    onclick="event.preventDefault();
+                                                this.closest('form').submit();">
+                                {{ __('Log Out') }}
                             </x-dropdown-link>
-                            <x-dropdown-link :href="route('profile.edit')">
-                                {{ __('Profile') }}
-                            </x-dropdown-link>
-                            <!-- Authentication -->
-                            <form method="POST" action="{{ route('logout') }}">
-                                @csrf
-                                <x-dropdown-link :href="route('logout')"
-                                        onclick="event.preventDefault();
-                                                    this.closest('form').submit();">
-                                    {{ __('Log Out') }}
-                                </x-dropdown-link>
-                            </form>
-                        </x-slot>
-                    </x-dropdown>
+                        </form>
+                    </x-slot>
+                </x-dropdown>
                 @else
-                    <!-- Si el usuario NO está autenticado, muestra Iniciar Sesión/Registrarse -->
-                    <a href="{{ route('login') }}" class="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition duration-150 ease-in-out font-semibold px-3 py-2 flex items-center">
-                        Iniciar Sesión
-                    </a>
-                    <a href="{{ route('register') }}" class="ml-4 text-white bg-red-600 px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition duration-150 ease-in-out flex items-center">
-                        Registrarse
-                    </a>
+                    <a href="{{ route('login') }}" class="px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 focus:bg-red-700 active:bg-red-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150">Iniciar sesión</a>
+
+                    @if (Route::has('register'))
+                        <a href="{{ route('register') }}" class="ms-4 px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 focus:bg-red-700 active:bg-red-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150">Registrarse</a>
+                    @endif
                 @endauth
             </div>
 
-            <!-- Hamburger (Menú Móvil) -->
+            <!-- Hamburger -->
             <div class="-me-2 flex items-center sm:hidden">
                 <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-900 focus:outline-none focus:bg-gray-100 dark:focus:bg-gray-900 focus:text-gray-500 dark:focus:text-gray-400 transition duration-150 ease-in-out">
                     <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
@@ -84,51 +95,48 @@
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
             <x-responsive-nav-link :href="route('storefront')" :active="request()->routeIs('storefront')">
-                {{ __('Menú Principal') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('cart.index')" :active="request()->routeIs('cart.index')">
-                {{ __('Carrito') }}
+                {{ __('Tienda') }}
             </x-responsive-nav-link>
         </div>
 
         <!-- Responsive Settings Options -->
-        @auth
-            <div class="pt-4 pb-1 border-t border-gray-200 dark:border-gray-600">
-                <div class="px-4">
-                    <div class="font-medium text-base text-gray-800 dark:text-gray-200">{{ Auth::user()->name }}</div>
-                    <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>
-                </div>
+        <div class="pt-4 pb-1 border-t border-gray-200 dark:border-gray-600">
+            @auth
+            <div class="px-4">
+                <div class="font-medium text-base text-gray-800 dark:text-gray-200">{{ Auth::user()->name }}</div>
+                <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>
+            </div>
 
-                <div class="mt-3 space-y-1">
-                    <x-responsive-nav-link :href="route('dashboard')">
-                        {{ __('Dashboard') }}
+            <div class="mt-3 space-y-1">
+                <x-responsive-nav-link :href="route('profile.edit')">
+                    {{ __('Profile') }}
+                </x-responsive-nav-link>
+
+                <!-- Authentication -->
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+
+                    <x-responsive-nav-link :href="route('logout')"
+                            onclick="event.preventDefault();
+                                        this.closest('form').submit();">
+                        {{ __('Log Out') }}
                     </x-responsive-nav-link>
-                    <x-responsive-nav-link :href="route('profile.edit')">
-                        {{ __('Profile') }}
+                </form>
+            </div>
+            @else
+                <div class="space-y-1">
+                    <x-responsive-nav-link :href="route('login')">
+                        {{ __('Log in') }}
                     </x-responsive-nav-link>
-
-                    <!-- Authentication -->
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-
-                        <x-responsive-nav-link :href="route('logout')"
-                                onclick="event.preventDefault();
-                                            this.closest('form').submit();">
-                            {{ __('Log Out') }}
+                    @if (Route::has('register'))
+                        <x-responsive-nav-link :href="route('register')">
+                            {{ __('Register') }}
                         </x-responsive-nav-link>
-                    </form>
+                    @endif
                 </div>
-            </div>
-        @else
-            <!-- Enlaces de Login/Register para móvil (no logueado) -->
-            <div class="pt-4 pb-1 border-t border-gray-200 dark:border-gray-600">
-                <x-responsive-nav-link :href="route('login')">
-                    {{ __('Iniciar Sesión') }}
-                </x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('register')">
-                    {{ __('Registrarse') }}
-                </x-responsive-nav-link>
-            </div>
-        @endauth
+            @endauth
+        </div>
     </div>
 </nav>
+
+ 

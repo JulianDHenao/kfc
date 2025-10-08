@@ -19,11 +19,19 @@ class CartController extends Controller
     }
 
     // Añade un ítem al carrito (Ruta POST: /cart/add/{item})
-    public function add(Request $request, MenuItem $item)
+    public function add(Request $request, $itemId)
     {
+        // MEJORA: Buscamos el item para asegurar que existe antes de añadirlo.
+        // Esto funciona tanto para el ID enviado desde React como para el Route-Model binding.
+        $item = MenuItem::find($itemId);
+
+        if (!$item) {
+            return redirect()->back()->with('error', 'El producto que intentas añadir no existe.');
+        }
+
         // 1. Obtener el carrito de la sesión
         $cart = session()->get('cart', []);
-        $itemId = $item->id;
+        // $itemId ya lo tenemos como parámetro.
 
         if (isset($cart[$itemId])) {
             // Si el ítem ya existe, incrementamos la cantidad
@@ -40,6 +48,11 @@ class CartController extends Controller
 
         // 2. Guardar el carrito actualizado de nuevo en la sesión
         session()->put('cart', $cart);
+
+        // MEJORA: Si la petición es AJAX (como la de nuestro chatbot), devolvemos una respuesta JSON.
+        if ($request->wantsJson()) {
+            return response()->json(['success' => '¡Producto añadido al carrito!']);
+        }
 
         // 3. Redirigir de vuelta al menú con un mensaje
         return redirect()->back()->with('success', '¡Producto añadido al carrito!');
@@ -85,5 +98,16 @@ class CartController extends Controller
         }
 
         return redirect()->back()->with('success', 'Producto eliminado del carrito.');
+    }
+
+    /**
+     * Devuelve la cantidad total de items en el carrito en formato JSON.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function count()
+    {
+        $totalQuantity = array_sum(array_column(session('cart', []), 'quantity'));
+        return response()->json(['count' => $totalQuantity]);
     }
 }

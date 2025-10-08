@@ -19,5 +19,8 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
+
+        // Llamamos al seeder de restaurantes para que popule la tabla.
+        $this->call(RestaurantSeeder::class);
     }
 }
