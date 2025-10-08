@@ -13,6 +13,11 @@ Route::get('/', [MenuItemController::class, 'storefront'])->name('storefront');
 
 Route::get('/restaurantes', [RestaurantController::class, 'index'])->name('restaurants.index');
 
+// Nueva ruta para la página "Nosotros"
+Route::get('/nosotros', function () {
+    return view('nosotros');
+})->name('nosotros'); // <-- Asegúrate de que esta línea exista y esté correcta.
+
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');

@@ -21,3 +21,17 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 // MEJORA: Nueva ruta para obtener la cantidad de items en el carrito
 Route::get('/cart/count', [CartController::class, 'count'])->name('api.cart.count');
+
+
+
+Route::get('/restaurantes', [RestaurantController::class, 'index'])->name('restaurants.index');
+
+// Nueva ruta para la página "Nosotros"
+Route::get('/nosotros', function () {
+    return view('nosotros');
+})->name('nosotros');
+
+Route::get('/dashboard', function () {
+    return view('dashboard');
+})->middleware(['auth', 'verified'])->name('dashboard');
+
