@@ -105,8 +105,6 @@
     <div id="chatbot-root"
         data-menu-items="{{ json_encode($groupedItems) }}">
     </div>
-    {{-- Cargar el script de React compilado para el Chatbot --}}
-    @vite('resources/js/Chatbot.jsx')
     {{-- FIN: INTEGRACIÓN DEL AGENTE CONVERSACIONAL --}}
 
     {{-- INICIO: Script para añadir al carrito y notificaciones --}}

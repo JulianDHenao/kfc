@@ -33,10 +33,10 @@ const Chatbot = ({ menuJson, onAddToCart }) => {
     /**
      * Procesa la respuesta del modelo, buscando acciones de "agregar al carrito".
      * Esta función permite al Agente "activar" la funcionalidad de la tienda.
-     * @param {string} responseText - Texto de respuesta crudo de Gemini.
-     * @returns {object} Un objeto 'part' para el estado de los mensajes.
+     * @param {string} responseText - Texto de respuesta crudo de Gemini. 
+     * @returns {Array<object>} Un array de 'parts' para el estado de los mensajes.
      */
-    const handleModelAction = (responseText) => {
+    const processModelResponse = (responseText) => {
         // MEJORA 2.0: Hacemos la detección de JSON más robusta.
         // Buscamos un bloque JSON que empiece con `[` y termine con `]`.
         const jsonMatch = responseText.match(/(\[.*\])/s);
@@ -46,32 +46,31 @@ const Chatbot = ({ menuJson, onAddToCart }) => {
                 const data = JSON.parse(jsonMatch[1]);
                 // Si es un array de productos, es una sugerencia.
                 if (Array.isArray(data) && data.length > 0 && data[0].id && data[0].name) {
-                    // Opcional: Mostrar también el texto que venía antes del JSON.
                     const precedingText = responseText.substring(0, jsonMatch.index).trim();
+                    const parts = [];
                     if (precedingText) {
-                        setMessages(prev => [...prev, { role: 'model', parts: [{ type: 'text', content: precedingText }] }]);
+                        parts.push({ type: 'text', content: precedingText });
                     }
-                    return { type: 'product_suggestion', products: data };
+                    parts.push({ type: 'product_suggestion', products: data });
+                    return parts;
                 }
             }
         } catch (e) {
             console.error("Error al parsear JSON de sugerencia, se mostrará como texto.", e);
         }
 
-        // Si no hay JSON de productos, buscamos la acción de añadir.
         const addCartMatch = responseText.match(/AGREGAR_A_CARRITO:([^|]+)\|(\d+)/);
         if (addCartMatch && onAddToCart) {
             const productName = addCartMatch[1].trim();
             const quantity = parseInt(addCartMatch[2], 10);
             
-            onAddToCart(productName, quantity);
+            onAddToCart(productName, quantity); // Llama a la función para añadir al carrito
 
             const confirmationText = `¡Claro! He añadido ${quantity} ${productName} a tu carrito.`;
-            return { type: 'text', content: confirmationText };
+            return [{ type: 'text', content: confirmationText }];
         }
 
-        // Si no es ni sugerencia de producto ni acción, es un mensaje de texto simple.
-        return { type: 'text', content: responseText };
+        return [{ type: 'text', content: responseText }];
     };
 
     /**
@@ -172,181 +171,127 @@ ${menuString}`;
         e.preventDefault();
         if (!input.trim() || isLoading) return;
 
-        const newUserMessage = { role: 'user', parts: [{ type: 'text', content: input }] };
-        const newMessages = [...messages, newUserMessage];
-        setMessages(newMessages);
+        const userMessageContent = input;
         setInput('');
         setIsLoading(true);
 
-        // Transformar mensajes a formato del API (solo el texto)
-        const chatHistory = newMessages.map(msg => ({
-            role: msg.role === 'model' ? 'model' : 'user',
-            parts: [{ text: msg.parts.find(p => p.type === 'text')?.content || '' }] // Solo pasamos el texto
-        }));
+        // Usamos la forma funcional de setState para evitar condiciones de carrera.
+        setMessages(prevMessages => {
+            const newUserMessage = { role: 'user', parts: [{ type: 'text', content: userMessageContent }] };
+            const updatedMessages = [...prevMessages, newUserMessage];
 
-        // 1. Llamar al API de Gemini
-        const rawResponseText = await callGeminiAPI(chatHistory);
-        
-        // 2. Procesar la respuesta para buscar la acción de agregar al carrito
-        const finalResponsePart = handleModelAction(rawResponseText);
+            // Transformar el historial actualizado a formato del API
+            const chatHistory = updatedMessages.map(msg => ({
+                role: msg.role === 'model' ? 'model' : 'user',
+                parts: [{ text: msg.parts.find(p => p.type === 'text')?.content || '' }]
+            }));
 
-        // Actualizar la interfaz con la respuesta del modelo
-        if (finalResponsePart) {
-            setMessages(prev => [...prev, { role: 'model', parts: [finalResponsePart] }]);
-        }
+            // Llamar a la API dentro de esta función de actualización de estado
+            callGeminiAPI(chatHistory).then(rawResponseText => {
+                const responseParts = processModelResponse(rawResponseText);
+                if (responseParts && responseParts.length > 0) {
+                    const newModelMessages = responseParts.map(part => ({ role: 'model', parts: [part] }));
+                    setMessages(prev => [...prev, ...newModelMessages]);
+                }
+                setIsLoading(false);
+            });
 
-        setIsLoading(false);
+            return updatedMessages; // Devolvemos el estado actualizado con el mensaje del usuario
+        });
     };
 
     // --- Renderizado de la Interfaz ---
 
-    // Estilos Tailwind para un diseño simple y moderno
-    const colors = {
-        primary: 'bg-red-600',
-        secondary: 'bg-gray-200',
-        textPrimary: 'text-white',
-        textSecondary: 'text-gray-800',
-    };
-
-    const ChatBubble = ({ message }) => (
-        <div className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-xs md:max-w-md lg:max-w-lg my-1 ${message.role === 'user' ? 'px-4 py-2' : ''} rounded-xl shadow-md ${
-                message.role === 'user'
-                    ? `${colors.primary} ${colors.textPrimary} rounded-br-none`
-                    : 'bg-transparent' // El contenedor de la burbuja del bot es transparente
-            }`}>
-                {message.parts.map((part, i) => {
-                    if (part.type === 'product_suggestion') {
-                        return (
-                            <div key={i} className="w-full">
-                                {part.products.map(product => (
-                                    <ProductCard key={product.id} product={product} onAddToCart={onAddToCart} />
-                                ))}
-                            </div>
-                        );
-                    }
-                    // Default to text
-                    return <div key={i} className={`inline-block ${message.role === 'model' ? 'bg-gray-200 text-gray-800 rounded-xl rounded-tl-none px-4 py-2' : ''}`}>{part.content}</div>;
-                })}
-            </div>
-        </div>
+    // Componente para el avatar, ahora usa una imagen real
+    const ColonelAvatar = ({ className }) => (
+        <img src="/images/colonel-avatar.png" alt="Coronel Sanders" className={className} />
     );
 
-    // Ícono del Coronel (manteniendo el SVG anterior)
-    const ColonelIcon = () => (
-        <svg className="w-6 h-6 mr-2 text-white fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <title>Coronel Sanders</title>
-            {/* Sombrero - Simple forma redondeada */}
-            <path d="M12 2L12 6M10 6L14 6L14 8L10 8L10 6Z" fill="#FFFFFF"/>
-            {/* Cabeza - Simple forma de circulo */}
-            <circle cx="12" cy="14" r="5" fill="#F8E7C5"/>
-            {/* Barba / Pelo blanco - Se asegura que la barba blanca sea visible en el fondo blanco */}
-            <path d="M12 9c-2.76 0-5 2.24-5 5v3h10v-3c0-2.76-2.24-5-5-5z" fill="#FFFFFF"/>
-            {/* Ojos - puntos simples */}
-            <circle cx="10.5" cy="13" r="0.5" fill="#333333"/>
-            <circle cx="13.5" cy="13" r="0.5" fill="#333333"/>
-            {/* Pajarita - Pequeña forma roja que simula una pajarita de pollo */}
-            <path d="M12 18l-1-2h2l-1 2Z" fill="#BB0000"/>
-        </svg>
+    const ChatBubble = ({ message }) => {
+        const isUser = message.role === 'user';
+        const bubbleClass = isUser ? 'chat-bubble user' : 'chat-bubble model';
+
+        return (
+            <div className={`chat-bubble-wrapper ${isUser ? 'user' : 'model'}`}>
+                {!isUser && <div className="avatar"><ColonelAvatar className="colonel-avatar-icon" /></div>}
+                <div className={bubbleClass}>
+                    {message.parts.map((part, i) => {
+                        if (part.type === 'product_suggestion') {
+                            return (
+                                <div key={i} className="product-suggestion-container">
+                                    {part.products.map(product => (
+                                        <ProductCard key={product.id} product={product} onAddToCart={onAddToCart} />
+                                    ))}
+                                </div>
+                            );
+                        }
+                        return <div key={i}>{part.content}</div>;
+                    })}
+                </div>
+            </div>
+        );
+    };
+
+    const TypingIndicator = () => (
+        <div className="chat-bubble-wrapper model">
+            <div className="avatar"><ColonelAvatar className="colonel-avatar-icon" /></div>
+            <div className="chat-bubble model typing-indicator">
+                <span className="typing-dot" style={{ animationDelay: '0s' }}></span>
+                <span className="typing-dot" style={{ animationDelay: '0.2s' }}></span>
+                <span className="typing-dot" style={{ animationDelay: '0.4s' }}></span>
+            </div>
+        </div>
     );
 
     return (
         <>
             {/* Botón Flotante para ABRIR/CERRAR */}
-            <button
-                onClick={() => setIsOpen(!isOpen)}
-                style={{
-                    position: 'fixed',
-                    bottom: '24px', 
-                    right: '24px', 
-                    zIndex: 9999
-                }}
-                className={`w-14 h-14 rounded-full shadow-2xl 
-                ${colors.primary} hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-300 transition duration-300 ease-in-out`} 
-            >
-                {/* Ícono dinámico: Chat (cerrado) o Minimizar (abierto) */}
-                <svg className={`w-8 h-8 mx-auto ${colors.textPrimary}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    {isOpen ? (
-                        // Icono de flecha hacia abajo o minimizar cuando está abierto
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-                    ) : (
-                        // Icono de chat/mensaje cuando está cerrado
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0zM12 18v-6"></path>
-                    )}
-                </svg>
+            <button onClick={() => setIsOpen(!isOpen)} id="chatbot-toggle" title="Hablar con el Coronel">
+                {isOpen ? (
+                    // Icono de X cuando el chat está abierto
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style={{width: '32px', height: '32px', color: 'white'}}>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                ) : (
+                    // Imagen del Coronel cuando el chat está cerrado
+                    <img src="/images/colonel-fab.png" alt="Abrir chat" />
+                )}
             </button>
 
             {/* Ventana del Chatbot */}
-            <div
-                style={{
-                    position: 'fixed',
-                    bottom: '96px', // Posición original
-                    right: '24px', 
-                    zIndex: 9999,
-                    width: '360px', 
-                    maxWidth: '85vw', 
-                    maxHeight: '50vh', 
-                }}
-                className={`bg-white dark:bg-gray-700 rounded-xl shadow-2xl flex flex-col transition-all duration-300 transform 
-                ${isOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0 pointer-events-none'}`}
-            >
+            <div id="chatbot-window" className={isOpen ? 'open' : ''}>
                 {/* Encabezado con Ícono y Botón de Cierre */}
-                <div className={`p-4 rounded-t-xl ${colors.primary} flex items-center justify-between shadow-md`}>
-                    
-                    {/* Contenedor del Título y el Coronel */}
-                    <div className="flex items-center">
-                        <ColonelIcon />
-                        {/* CAMBIO 3: Título visible actualizado */}
-                        <h3 className={`font-bold text-lg ${colors.textPrimary}`}>Coronel Sanders</h3>
+                <div id="chatbot-header">
+                    <div className="header-content">
+                        <ColonelAvatar className="colonel-header-icon" />
+                        <h3>Coronel Sanders</h3>
                     </div>
-
-                    {/* Botón de Cierre/Minimizar (Usando el Icono de X simple) */}
-                    <button 
-                        onClick={() => setIsOpen(false)}
-                        className={`p-1 rounded-full hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-300 transition duration-150`}
-                        title="Cerrar Chat"
-                    >
-                        {/* Icono de X simple para cerrar */}
-                        <svg className={`w-6 h-6 ${colors.textPrimary}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
+                    <button onClick={() => setIsOpen(false)} title="Cerrar Chat" className="close-button">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
 
                 {/* Cuerpo del Mensaje (flex-1 y overflow-y-auto aseguran el scroll dentro del límite de altura) */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+                <div id="chatbot-messages">
                     {messages.map((msg, index) => (
                         <ChatBubble key={index} message={msg} />
                     ))}
-                    {isLoading && (
-                        <div className="flex justify-start">
-                            <div className={`px-4 py-2 my-1 rounded-xl shadow-md ${colors.secondary} ${colors.textSecondary} rounded-tl-none`}>
-                                <div className="animate-pulse">...escribiendo</div>
-                            </div>
-                        </div>
-                    )}
+                    {isLoading && <TypingIndicator />}
                     <div ref={messagesEndRef} />
                 </div>
 
                 {/* Pie de Página / Entrada de Texto */}
-                <form onSubmit={handleSend} className="p-4 border-t border-gray-200 dark:border-gray-600">
-                    <div className="flex">
-                        <input
-                            type="text"
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            placeholder="Escribe tu mensaje..."
-                            className="flex-1 p-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                            disabled={isLoading}
-                        />
-                        <button
-                            type="submit"
-                            className={`px-4 rounded-r-lg font-bold text-white transition duration-300 ${colors.primary} hover:bg-red-700 disabled:opacity-60`}
-                            disabled={isLoading}
-                        >
-                            Enviar
-                        </button>
-                    </div>
+                <form onSubmit={handleSend} id="chatbot-form">
+                    <input
+                        type="text"
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        placeholder="Escribe tu mensaje..."
+                        disabled={isLoading}
+                    />
+                    <button type="submit" disabled={isLoading}>
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                    </button>
                 </form>
             </div>
         </>
@@ -414,4 +359,3 @@ if (menuElement) {
 }
 
 export default Chatbot;
-
