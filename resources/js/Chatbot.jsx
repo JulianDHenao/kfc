@@ -37,13 +37,15 @@ const Chatbot = ({ menuJson, onAddToCart }) => {
      * @returns {Array<object>} Un array de 'parts' para el estado de los mensajes.
      */
     const processModelResponse = (responseText) => {
-        // MEJORA 2.0: Hacemos la detección de JSON más robusta.
-        // Buscamos un bloque JSON que empiece con `[` y termine con `]`.
-        const jsonMatch = responseText.match(/(\[.*\])/s);
+        // MEJORA 4.0: Detección de JSON aún más robusta.
+        // Busca un bloque JSON, opcionalmente envuelto en ```json ... ```
+        // Esto soluciona el problema de que la IA devuelva el JSON como un bloque de código.
+        const jsonMatch = responseText.match(/```json\s*(\[.*\])\s*```|(\[.*\])/s);
 
         try {
-            if (jsonMatch && jsonMatch[1]) {
-                const data = JSON.parse(jsonMatch[1]);
+            const jsonString = jsonMatch ? (jsonMatch[1] || jsonMatch[2]) : null;
+            if (jsonString) {
+                const data = JSON.parse(jsonString);
                 // Si es un array de productos, es una sugerencia.
                 if (Array.isArray(data) && data.length > 0 && data[0].id && data[0].name) {
                     const precedingText = responseText.substring(0, jsonMatch.index).trim();
@@ -84,7 +86,10 @@ const Chatbot = ({ menuJson, onAddToCart }) => {
             // Generar la cadena de menú incluso si menuData no es un objeto perfecto, previniendo errores de .map
             const menuString = Object.entries(menuData).map(([category, items]) => {
                 const itemsArray = Array.isArray(items) ? items : []; 
-                const itemsList = itemsArray.map(item => `${item.name} ($${item.price})`).join(', ');
+                // MEJORA 4.0: Pasamos el objeto completo a la IA para que tenga todos los datos.
+                // Usamos JSON.stringify para asegurar que la IA reciba un formato que pueda replicar.
+                // Esto soluciona el problema de las tarjetas sin imagen o sin ID.
+                const itemsList = itemsArray.map(item => JSON.stringify(item)).join(', ');
                 return `Categoría: ${category}\nItems: ${itemsList}`;
             }).join('\n---\n');
             
@@ -94,7 +99,7 @@ const Chatbot = ({ menuJson, onAddToCart }) => {
 1.  **Modo Sugerencia (cuando el usuario pregunta por productos, ej: "qué hamburguesas tienes?"):**
     - Busca en el MENÚ ACTUAL los productos que coincidan.
     - Responde **ÚNICAMENTE** con un JSON array que contenga los objetos de los productos encontrados. No añadas texto adicional.
-    - Ejemplo de respuesta si el usuario pregunta por "pollo": [{"id":1,"name":"Pieza de Pollo","price":"2.50",...}, {"id":2,"name":"Tenders","price":"5.00",...}]
+    - El JSON debe ser idéntico al del MENÚ ACTUAL, incluyendo id, name, price, image_url, etc.
 
 2.  **Modo Acción (cuando el usuario pide explícitamente añadir algo, ej: "quiero un Mega Box"):**
     - Responde amablemente y añade **AL FINAL** del mensaje la etiqueta de acción.

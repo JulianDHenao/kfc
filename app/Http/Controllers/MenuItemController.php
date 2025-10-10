@@ -4,95 +4,119 @@ namespace App\Http\Controllers;
 
 use App\Models\MenuItem;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Redirect;
 
 class MenuItemController extends Controller
 {
     /**
-     * Muestra la página principal de la tienda (Storefront).
-     * * Este es el método que tu ruta principal (web.php) está tratando de llamar.
+     * Muestra la página principal de la tienda.
      */
     public function storefront()
     {
-        // 1. Obtener todos los items del menú
         $menuItems = MenuItem::all();
-
-        // 2. Agrupar los items por categoría
-        // El resultado es una Colección de Colecciones (groupedItems)
         $groupedItems = $menuItems->groupBy('category');
-
-        // 3. Devolver la vista 'storefront' y pasar los items agrupados
-        // Pasamos la variable $groupedItems a la vista.
         return view('storefront', compact('groupedItems'));
     }
 
     /**
-     * Muestra una lista de todos los elementos del menú (para gestión).
+     * Muestra la lista de todos los items del menú para gestionarlos.
+     * Ruta: GET /menu
      */
     public function index()
     {
-        $menuItems = MenuItem::all();
+        $menuItems = MenuItem::orderBy('category')->orderBy('name')->get();
         return view('menu.index', compact('menuItems'));
     }
 
     /**
-     * Muestra el formulario para crear un nuevo elemento del menú.
+     * Muestra el formulario para crear un nuevo item.
+     * Ruta: GET /menu/create
      */
     public function create()
     {
-        return view('menu.create');
+        // Pasamos un item vacío para reutilizar el formulario
+        return view('menu.create', ['item' => new MenuItem()]);
     }
 
     /**
-     * Almacena un nuevo elemento del menú en la base de datos.
+     * Guarda un nuevo item en la base de datos.
+     * Ruta: POST /menu
      */
     public function store(Request $request)
     {
-        $request->validate([
+        // Solución: Si image_url es una cadena vacía, la convertimos a null antes de validar.
+        if ($request->input('image_url') === '') {
+            $request->merge(['image_url' => null]);
+        }
+
+        $validatedData = $request->validate([
             'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'price' => 'required|numeric|min:0.01',
+            'description' => 'required|string',
+            'price' => 'required|numeric|min:0',
             'category' => 'required|string|max:255',
-            'image_url' => 'nullable|string|max:255', // En un entorno real, manejarías la subida de archivos
+            'image_url' => 'nullable|string|max:255', // Cambiamos 'url' por 'string'
         ]);
 
-        MenuItem::create($request->all());
+        MenuItem::create($validatedData);
 
-        return Redirect::route('menu.index')->with('success', 'Producto creado con éxito.');
+        return redirect()->route('menu.index')->with('success', 'Producto creado exitosamente.');
     }
 
     /**
-     * Muestra el formulario para editar un elemento específico del menú.
+     * Muestra un item específico (no se usa mucho en CRUDs de admin, pero es parte del resource).
+     * Ruta: GET /menu/{menu}
      */
-    public function edit(MenuItem $menuItem)
+    public function show(MenuItem $menu)
     {
-        return view('menu.edit', compact('menuItem'));
+        // Normalmente redirigimos a la edición
+        return redirect()->route('menu.edit', $menu);
     }
 
     /**
-     * Actualiza el elemento del menú especificado en el almacenamiento.
+     * Muestra el formulario para editar un item existente.
+     * Laravel inyecta automáticamente el MenuItem gracias al Route-Model Binding.
+     * Ruta: GET /menu/{menu}/edit
      */
-    public function update(Request $request, MenuItem $menuItem)
+    public function edit(MenuItem $menu)
     {
-        $request->validate([
+        return view('menu.edit', ['item' => $menu]);
+    }
+
+    /**
+     * Actualiza un item existente en la base de datos.
+     * Ruta: PUT/PATCH /menu/{menu}
+     */
+    public function update(Request $request, MenuItem $menu)
+    {
+        // Solución: Si image_url es una cadena vacía, la convertimos a null antes de validar.
+        if ($request->input('image_url') === '') {
+            $request->merge(['image_url' => null]);
+        }
+
+        $validatedData = $request->validate([
             'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'price' => 'required|numeric|min:0.01',
+            'description' => 'required|string',
+            'price' => 'required|numeric|min:0',
             'category' => 'required|string|max:255',
-            'image_url' => 'nullable|string|max:255',
+            'image_url' => 'nullable|string|max:255', // Cambiamos 'url' por 'string'
         ]);
 
-        $menuItem->update($request->all());
+        $menu->update($validatedData);
 
-        return Redirect::route('menu.index')->with('success', 'Producto actualizado con éxito.');
+        return redirect()->route('menu.index')->with('success', 'Producto actualizado exitosamente.');
     }
 
     /**
-     * Elimina el elemento del menú especificado del almacenamiento.
+     * Elimina un item de la base de datos.
+     * Ruta: DELETE /menu/{menu}
      */
-    public function destroy(MenuItem $menuItem)
+    public function destroy(MenuItem $menu)
     {
-        $menuItem->delete();
-        return Redirect::route('menu.index')->with('success', 'Producto eliminado con éxito.');
+        try {
+            $menu->delete();
+            return redirect()->route('menu.index')->with('success', 'Producto eliminado exitosamente.');
+        } catch (\Exception $e) {
+            // Manejo de errores por si el producto está en un pedido, etc.
+            return redirect()->route('menu.index')->with('error', 'No se pudo eliminar el producto. Es posible que esté asociado a un pedido.');
+        }
     }
 }

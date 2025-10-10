@@ -31,6 +31,8 @@
                 '{{ asset('images/banner2.jpeg') }}',
                 '{{ asset('images/banner3.jpg') }}',
                 '{{ asset('images/banner4.jpg') }}',
+                '{{ asset('images/banner5.jpeg') }}',
+                
             ],
             activeSlide: 0,
             loop() {
@@ -40,7 +42,7 @@
             }
         }"
         x-init="loop"
-        class="relative w-full h-80 md:h-[32rem] overflow-hidden mb-12"
+        class="relative w-full h-96 md:h-[40rem] overflow-hidden mb-12"
     >
         <!-- Contenedor de las imágenes -->
         <template x-for="(slide, index) in slides" :key="index">
@@ -79,7 +81,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
                     @foreach ($items as $item)
                         <div class="bg-white rounded-lg shadow-lg overflow-hidden flex flex-col">
-                            <img src="{{ $item->image_url ?: 'https://via.placeholder.com/400x300.png/f8f8f8/cccccc?text=KFC' }}" alt="{{ $item->name }}" class="w-full h-56 object-cover">
+                            <img src="{{ $item->image_url ? asset($item->image_url) : 'https://via.placeholder.com/400x300.png/f8f8f8/cccccc?text=KFC' }}" alt="{{ $item->name }}" class="w-full h-56 object-cover">
                             <div class="p-6 flex flex-col flex-grow">
                                 <h3 class="text-xl font-semibold text-gray-800 mb-2">{{ $item->name }}</h3>
                                 <p class="text-gray-600 text-sm mb-4 flex-grow">{{ $item->description }}</p>

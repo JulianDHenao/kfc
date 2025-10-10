@@ -59,7 +59,7 @@ class CartController extends Controller
     }
     
     // Actualiza la cantidad de un ítem en el carrito (Ruta PATCH: /cart/update/{item})
-    public function update(Request $request, MenuItem $item)
+    public function update(Request $request, $itemId)
     {
         try {
             // Validamos que sea un número >= 1
@@ -70,13 +70,13 @@ class CartController extends Controller
 
 
         $cart = session()->get('cart', []);
-        $itemId = $item->id;
 
         if (isset($cart[$itemId])) {
             // Actualizamos la cantidad con el valor enviado desde el formulario
             $cart[$itemId]['quantity'] = $request->quantity;
             session()->put('cart', $cart);
             
+
             return redirect()->back()->with('success', 'Cantidad actualizada correctamente.');
         }
 
@@ -84,10 +84,9 @@ class CartController extends Controller
     }
 
     // Elimina un ítem del carrito (Ruta DELETE: /cart/remove/{item})
-    public function remove(MenuItem $item)
+    public function remove($itemId)
     {
         $cart = session()->get('cart');
-        $itemId = $item->id;
 
         if (isset($cart[$itemId])) {
             // Eliminamos el ítem del array del carrito

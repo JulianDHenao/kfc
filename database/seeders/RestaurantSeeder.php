@@ -13,6 +13,27 @@ class RestaurantSeeder extends Seeder
     // database/seeders/RestaurantSeeder.php
 public function run(): void
     {
+
+            \App\Models\Restaurant::create([
+            'name' => 'KFC - Mall Plaza',
+            'address' => 'Carrera 14, Av. Kevin Ángel #55D – 251, Manizales, Caldas',
+            'city' => 'Manizales',
+            'state' => 'Caldas',
+            'phone_number' => '606-555-0107',
+            'latitude' => 5.066051863472174,
+            'longitude' => -75.4903415131553,   
+        ]);
+
+        \App\Models\Restaurant::create([
+            'name' => 'KFC - Fundadores',
+            'address' => 'Cl. 33b #20-03, Centro',
+            'city' => 'Manizales',
+            'state' => 'Caldas',
+            'phone_number' => '606-555-0108',
+            'latitude' => 5.069170806216724,
+            'longitude' => -75.5099448855809,
+        ]);
+
         \App\Models\Restaurant::create([
             'name' => 'KFC - Titán Plaza',
             'address' => 'Cra. 72 #80-94, Engativá',
@@ -73,24 +94,6 @@ public function run(): void
             'longitude' => -75.5535,
         ]);
 
-        \App\Models\Restaurant::create([
-            'name' => 'KFC - Cable Plaza',
-            'address' => 'Cl. 65 #23B-20, Zona Rosa',
-            'city' => 'Manizales',
-            'state' => 'Caldas',
-            'phone_number' => '606-555-0107',
-            'latitude' => 4.6003,
-            'longitude' => -75.4855,
-        ]);
-
-        \App\Models\Restaurant::create([
-            'name' => 'KFC - Fundadores',
-            'address' => 'Cl. 33b #20-03, Centro',
-            'city' => 'Manizales',
-            'state' => 'Caldas',
-            'phone_number' => '606-555-0108',
-            'latitude' => 4.5951,
-            'longitude' => -75.4958,
-        ]);
+;
     }
 }
