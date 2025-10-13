@@ -1,0 +1,40 @@
+@startuml UseCaseDiagram
+!theme materia
+left to right direction
+title Diagrama de Casos de Uso - Sistema de Pedidos KFC
+
+actor Cliente
+actor Administrador
+Administrador --|> Cliente
+
+rectangle "Sistema de Pedidos KFC" {
+    usecase "Registrarse" as UC_Register
+    usecase "Iniciar Sesión" as UC_Login
+    usecase "Gestionar Cuenta" as UC_Cuenta
+    usecase "Ver Menú de Productos" as UC_ViewMenu
+    usecase "Ver Mapa de Restaurantes" as UC_ViewMap
+    usecase "Añadir producto al carrito" as UC_AddToCart
+    usecase "Actualizar cantidad en carrito" as UC_UpdateCart
+    usecase "Eliminar producto del carrito" as UC_RemoveFromCart
+    usecase "Realizar Pedido" as UC_Checkout
+    usecase "Ver Historial de Pedidos" as UC_ViewOrders
+    usecase "Gestionar Productos (CRUD)" as UC_ManageItems
+}
+
+Cliente -- UC_Register
+Cliente -- UC_Login
+Cliente -- UC_Cuenta
+Cliente -- UC_ViewMenu
+Cliente -- UC_ViewMap
+Cliente -- UC_AddToCart
+Cliente -- UC_UpdateCart
+Cliente -- UC_RemoveFromCart
+Cliente -- UC_Checkout
+Cliente -- UC_ViewOrders
+
+Administrador -- UC_ManageItems
+
+UC_Checkout <. (Iniciar Sesión) : <<include>>
+UC_ViewOrders <. (Iniciar Sesión) : <<include>>
+
+@enduml

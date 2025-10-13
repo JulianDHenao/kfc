@@ -1,0 +1,74 @@
+@startuml ClassDiagram
+
+!theme materia
+title Diagrama de Clases - Sistema de Pedidos KFC
+
+package Models {
+    class User {
+        + id: Integer
+        + name: String
+        + email: String
+        - password: String
+        --
+        + orders: Collection<Order>
+    }
+
+    class Order {
+        + id: Integer
+        + total_amount: Decimal
+        + delivery_address: String
+        + phone_number: String
+        + status: String
+        --
+        + user: User
+        + items: Collection<OrderItem>
+    }
+
+    class OrderItem {
+        + id: Integer
+        + quantity: Integer
+        + unit_price: Decimal  // Precio capturado al momento del pedido
+        --
+        + order: Order
+        + menuItem: MenuItem
+    }
+
+    class MenuItem {
+        + id: Integer
+        + name: String
+        + description: String
+        + price: Decimal
+        + category: String
+        + image_url: String
+        --
+        + restaurant: Restaurant
+    }
+
+    class Restaurant {
+        + id: Integer
+        + name: String
+        + address: String
+        + city: String
+        + state: String
+        + phone_number: String
+        + latitude: Real
+        + longitude: Real
+        --
+        + menuItems: Collection<MenuItem>
+    }
+}
+
+' --- Relaciones (Asociaciones) ---
+' Un User realiza múltiples Orders
+User "1" -- "0..*" Order : realiza
+
+' Un Order contiene uno o más OrderItems
+Order "1" -- "1..*" OrderItem : contiene
+
+' Un MenuItem está asociado a múltiples OrderItems (Histórico)
+MenuItem "1" -- "0..*" OrderItem : <<asocia>>
+
+' Un Restaurant ofrece múltiples MenuItems
+Restaurant "1" -- "0..*" MenuItem : ofrece
+
+@enduml

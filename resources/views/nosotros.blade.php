@@ -18,18 +18,20 @@
         <article class="prose lg:prose-xl mx-auto bg-white p-8 rounded-lg shadow-md">
             {{-- Título Principal --}}
             <h1>
-                Trafalgar
+                
             </h1>
             <h2>
-                Por Benito Pérez Galdós
+                Sobre KFC
             </h2>
 
             {{-- Contenido del Texto --}}
             <p>
-                Se me permitirá que antes de referir el gran suceso de que fui testigo, diga algunas palabras sobre mi infancia, explicando por qué extraña manera me llevaron los azares de la vida a presenciar la terrible catástrofe de nuestra marina.
+                Nuestro pollo es único, prácticamente nosotros lo inventamos. Si en algún momento hacen un salón de la fama de la comida, nuestro pollo estaría primero.
             </p>
+            <h1>Sus Inicios </h1>
             <p>
-                Al hablar de mi nacimiento, no imitaré a la mayor parte de los que cuentan hechos de su propia vida, quienes empiezan nombrando su parentela, las más veces noble, siempre hidalga por lo menos, si no se dicen descendientes del mismo Emperador de Trapisonda. Yo, en esta parte, no puedo adornar mi libro con sonoros apellidos; y fuera de mi madre, a quien conocí por poco tiempo, no tengo noticia de ninguno de mis ascendientes, si no es de Adán, cuyo parentesco me parece indiscutible. Doy principio, pues, a mi historia como Pablos, el buscón de Segovia: afortunadamente Dios ha querido que en esto sólo nos parezcamos.
+                
+Esta leyenda comenzó en 1930, en una humilde estación de servicio en Corbin, Kentucky. A sus 40 años Harland Sanders o más conocido como el Coronel Sanders comenzó alimentando hambrientos viajeros. Sanders pasó los siguientes nueve años perfeccionando su mezcla de 11 hierbas y especias hasta crear su famosa receta secreta. Como también su técnica de cocción que usamos hasta el día de hoy. En la actualidad existen más de 24.000 restaurantes de KFC alrededor del mundo, con 157 de ellos ubicados en Ecuador. Doy principio, pues, a mi historia como Pablos, el buscón de Segovia: afortunadamente Dios ha querido que en esto sólo nos parezcamos.
             </p>
             <p>
                 Yo nací en Cádiz, y en el famoso barrio de la Viña, que no es hoy, ni menos era entonces, academia de buenas costumbres. La memoria no me da luz alguna sobre mi persona y mis acciones en la niñez, sino desde la edad de seis años; y si recuerdo esta fecha, es porque la asocio a un suceso naval de que oí hablar entonces: el combate del cabo de San Vicente, acaecido en 1797.
